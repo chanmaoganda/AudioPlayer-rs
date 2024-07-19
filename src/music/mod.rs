@@ -1,7 +1,11 @@
 mod mpeg_music;
 mod ncm_music;
 
-pub trait MusicMedia {
-    fn as_source(&self);
-}
+use std::io::Cursor;
 
+pub use mpeg_music::MpegMusic;
+pub use ncm_music::NcmMusic;
+
+pub trait MusicMedia {
+    fn as_source(&self) -> Cursor<Vec<u8>>;
+}
