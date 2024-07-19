@@ -600,7 +600,7 @@ dependencies = [
  "glob",
  "id3",
  "log",
- "mpeg-audio-header",
+ "mp3-duration",
  "music_dump_lib",
  "rfd",
  "rodio",
@@ -2210,10 +2210,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "mpeg-audio-header"
-version = "0.0.6"
+name = "mp3-duration"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12af1ede3681924b714daf6ef2a62f6d49a060a818607a7e763536373cf6a42b"
+checksum = "348bdc7300502f0801e5b57c448815713cd843b744ef9bda252a2698fdf90a0f"
 dependencies = [
  "thiserror",
 ]

@@ -15,7 +15,7 @@ impl MpegMusic {
 }
 
 impl Decodable for MpegMusic {
-    fn into_cursor(self) -> Cursor<Vec<u8>> {
-        Cursor::new(self.audio_data)
+    fn get_cursor(&self) -> Cursor<Vec<u8>> {
+        Cursor::new(self.audio_data.clone())
     }
 }

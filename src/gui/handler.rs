@@ -1,82 +1,53 @@
+use std::sync::Arc;
+
 use eframe::App;
-use egui::{Layout, ScrollArea};
-use log::info;
+use egui::mutex::RwLock;
+
+use super::file_dialog::DialogHandler;
 
 pub struct Handler {
-    pub music_locations: Vec<String>,
-    pub picked_path: Option<String>,
+    pub play_list: Vec<String>,
+    pub picked_path: Arc<RwLock<Option<String>>>,
+    pub dialog_handler: DialogHandler,
+    pub dump_mode: bool,
 }
 
 impl Handler {
     pub fn new() -> Self {
+        let picked_path = Arc::new(RwLock::new(None));
         Self {
-            music_locations: vec![
-                "a".to_owned(),
-                "b".to_owned(),
-            ],
-            picked_path: None,
+            play_list: vec![],
+            picked_path: picked_path.clone(),
+            dialog_handler: DialogHandler::new(picked_path),
+            dump_mode: false,
         }
     }
 }
 
 impl App for Handler {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.dialog_handler.update_list();
         egui::CentralPanel::default().show(ctx, |ui| {
-            if ui.button("Open directory...").clicked() {
-                if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                    self.picked_path = Some(path.display().to_string());
-                }
-            }
-            
-            if self.picked_path.is_some() {
-                ui.columns(2, |cols| {
-                    cols[0].with_layout(Layout::right_to_left(egui::Align::Min),
-                    |ui| {
-                        ScrollArea::vertical().id_source("left_scroll").show(ui, |ui| {
-                            ui.vertical(|ui| {
-                                self.show_available_music(ui);
-                            });
-                        });
-                    });
-                    
-                    cols[1].with_layout(Layout::right_to_left(egui::Align::Min), 
-                    |ui| {
-                        ScrollArea::vertical().id_source("right_scroll").show(ui, |ui| {
-                            ui.vertical(|ui| {
-                                for music in &self.music_locations {
-                                    ui.label(music);
-                                    ui.add_space(1.);
-                                }
-                            });
-                        });
-                    });
-                });
-            }
+            self.update_picked_path(ui);
+            self.display_selectable_music(ui);
         });
     }
 }
 
 impl Handler {
-    fn show_available_music(&mut self, ui:&mut egui::Ui) {
-        if let Some(picked_path) = &self.picked_path {
-            for entry in glob::glob(&format!("{}/*.mp3", picked_path))
-                    .expect("Failed to read glob pattern") {
-                let file = entry.unwrap();
-                let file_name = file.file_name().unwrap().to_str().unwrap();
-                if ui.button(file_name).clicked() {
-                    info!("file {} added to playlist", file_name);
-                    self.music_locations.push(file_name.to_owned());
-                    info!("current list size: {}", self.music_locations.len());
-                };
+    fn update_picked_path(&self, ui: &mut egui::Ui) {
+        if ui.button("Open directory...").clicked() {
+            if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                let mut path_task = self.picked_path.write();
+                path_task.replace(path.to_str().unwrap().to_string());
             }
-            for entry in glob::glob(&format!("{}/*.ncm", picked_path))
-                    .expect("Failed to read glob pattern") {
-                let file = entry.unwrap();
-                let file_name = file.file_name().unwrap().to_str().unwrap();
-                if ui.label(file_name).clicked() {
-                    self.music_locations.push(file_name.to_owned());
-                };
-            }
+        }
+    }
+
+    fn display_selectable_music(&self, ui:&mut egui::Ui) {
+        let list_ref = self.dialog_handler.list_ref();
+        for music_path in list_ref.read().iter() {
+
         }
     }
 }
