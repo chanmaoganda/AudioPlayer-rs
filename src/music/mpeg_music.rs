@@ -1,6 +1,6 @@
-use std::path::Path;
+use std::{io::Cursor, path::Path};
 
-use crate::MusicMedia;
+use crate::Decodable;
 
 
 pub struct MpegMusic {
@@ -14,8 +14,8 @@ impl MpegMusic {
     }
 }
 
-impl MusicMedia for MpegMusic {
-    fn as_source(self) -> std::io::Cursor<Vec<u8>> {
-        std::io::Cursor::new(self.audio_data)
+impl Decodable for MpegMusic {
+    fn into_cursor(self) -> Cursor<Vec<u8>> {
+        Cursor::new(self.audio_data)
     }
 }
