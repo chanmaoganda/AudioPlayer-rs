@@ -1,3 +1,7 @@
+use music::MusicMedia;
+
+mod music;
+
 fn main() {
-    println!("Hello, world!");
+    let _list: Vec<&dyn MusicMedia> = Vec::new();
 }
