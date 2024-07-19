@@ -7,6 +7,7 @@ pub use music::*;
 pub use play_handler::*;
 
 fn main() -> anyhow::Result<()> {
+    env_logger::init();
     let native_options = eframe::NativeOptions::default();
     eframe::run_native("AudioPlayer-rs", 
         native_options, 
