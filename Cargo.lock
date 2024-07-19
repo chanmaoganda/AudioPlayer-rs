@@ -572,9 +572,8 @@ dependencies = [
 
 [[package]]
 name = "music_dump_lib"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44bb88bb4dbfd46f670777266916192d2ca1930236c3570613f35acca6e3b5d9"
+version = "0.1.1"
+source = "git+https://github.com/chanmaoganda/NcmDumpLib.git#98c477d7ec148862e8d8adf7c3eba4203e4313da"
 dependencies = [
  "aes",
  "anyhow",

@@ -7,5 +7,5 @@ pub use mpeg_music::MpegMusic;
 pub use ncm_music::NcmMusic;
 
 pub trait MusicMedia {
-    fn as_source(&self) -> Cursor<Vec<u8>>;
+    fn as_source(self) -> Cursor<Vec<u8>>;
 }
