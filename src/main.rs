@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
     let (sender, receiver) = sync_channel(1);
     
 
-    let music = thread::spawn(move || {
+    thread::spawn(move || {
         let music_player = MusicPlayer::new(receiver);
         music_player.run();
     });
@@ -27,7 +27,6 @@ fn main() -> anyhow::Result<()> {
         )
     ).unwrap();
 
-    music.join().unwrap();
     log::info!("Exiting");
 
     Ok(())
