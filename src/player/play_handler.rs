@@ -1,29 +1,36 @@
-use std::{path::PathBuf, sync::mpsc::Receiver, thread, time::Duration};
+use std::{path::PathBuf, sync::mpsc::{Receiver, SyncSender}, thread, time::Duration};
 
-use rodio::{Decoder, OutputStream, Sink};
+use rodio::{OutputStream, Sink};
 
-use crate::{event::Event, Music};
+use crate::event::Event;
+
+use super::audio::Audio;
 
 pub struct MusicPlayer {
     sink: Sink,
     _stream: OutputStream,
     event_receiver: Receiver<Event>,
+    pos_sender: SyncSender<Duration>,
 }
 
 impl MusicPlayer {
-    pub fn new(event_receiver: Receiver<Event>) -> Self {
+    pub fn new(event_receiver: Receiver<Event>, pos_sender: SyncSender<Duration>) -> Self {
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
         Self {
             sink,
             _stream,
             event_receiver,
+            pos_sender,
         }
     }
 
     pub fn run(self) {
         loop {
             thread::sleep(Duration::from_millis(15));
+            if !self.sink.empty() {
+                self.pos_sender.send(self.sink.get_pos()).unwrap();
+            }
             match self.event_receiver.try_recv() {
                 Ok(event) => {
                     match event {
@@ -52,18 +59,14 @@ impl MusicPlayer {
     }
 
     fn next(&self, path: PathBuf) {
+        let audio = Audio::new(&path);
         self.sink.stop();
-        let mut music = Music::new(path);
-        music.parse_audio_info();
-        let audio = music.audio_info.unwrap().decode_audio();
-        self.sink.append(Decoder::new(audio).unwrap());
+        self.sink.append(audio.into_decoder());
         self.sink.play();
     }
 
     fn append(&self, path: PathBuf) {
-        let mut music = Music::new(path);
-        music.parse_audio_info();
-        let audio = music.audio_info.unwrap().decode_audio();
-        self.sink.append(Decoder::new(audio).unwrap());
+        let audio = Audio::new(&path);
+        self.sink.append(audio.into_decoder());
     }
 }
