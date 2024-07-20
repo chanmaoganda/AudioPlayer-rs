@@ -599,8 +599,8 @@ dependencies = [
  "env_logger",
  "glob",
  "id3",
+ "lofty",
  "log",
- "mp3-duration",
  "music_dump_lib",
  "rfd",
  "rodio",
@@ -1140,6 +1140,12 @@ name = "dasp_sample"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
+
+[[package]]
+name = "data-encoding"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8566979429cf69b49a5c740c60791108e86440e8be149bbea4fe54d2c32d6e2"
 
 [[package]]
 name = "derivative"
@@ -2112,6 +2118,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "lofty"
+version = "0.20.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a102be499034ad09aa54fb54df817528f11ca4f642dd2434b64bced7044945f"
+dependencies = [
+ "byteorder",
+ "data-encoding",
+ "flate2",
+ "lofty_attr",
+ "log",
+ "ogg_pager",
+ "paste",
+]
+
+[[package]]
+name = "lofty_attr"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28bd4b9d8a5af74808932492521cdd272019b056f75fcc70056bd2c09fceb550"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.71",
+]
+
+[[package]]
 name = "log"
 version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2207,15 +2239,6 @@ checksum = "b8a240ddb74feaf34a79a7add65a741f3167852fba007066dcac1ca548d89c08"
 dependencies = [
  "adler",
  "simd-adler32",
-]
-
-[[package]]
-name = "mp3-duration"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "348bdc7300502f0801e5b57c448815713cd843b744ef9bda252a2698fdf90a0f"
-dependencies = [
- "thiserror",
 ]
 
 [[package]]
@@ -2568,6 +2591,15 @@ name = "ogg"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6951b4e8bf21c8193da321bcce9c9dd2e13c858fe078bf9054a288b419ae5d6e"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
+name = "ogg_pager"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87b0bef808533c5890ab77279538212efdbbbd9aa4ef1ccdfcfbf77a42f7e6fa"
 dependencies = [
  "byteorder",
 ]

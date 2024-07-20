@@ -1,14 +1,14 @@
-use std::{sync::{mpsc::SyncSender, Arc}, thread::{self}, time::Duration};
+use std::{path::PathBuf, sync::{mpsc::SyncSender, Arc}, thread::{self}, time::Duration};
 
 use eframe::App;
 use egui::{mutex::RwLock, Color32, FontDefinitions};
 
-use crate::{event::Event, Music};
+use crate::event::Event;
 
 use super::file_dialog::DialogHandler;
 
 pub struct Handler {
-    pub play_list: Vec<Music>,
+    pub play_list: Arc<RwLock<Vec<PathBuf>>>,
     pub picked_path: Arc<RwLock<Option<String>>>,
     pub dialog_handler: DialogHandler,
     pub dump_mode: bool,
@@ -20,7 +20,7 @@ impl Handler {
         Self::customize_font(&cc.egui_ctx);
         let picked_path = Arc::new(RwLock::new(None));
         Self {
-            play_list: vec![],
+            play_list: Arc::new(RwLock::new(Vec::new())),
             picked_path: picked_path.clone(),
             dialog_handler: DialogHandler::new(picked_path),
             dump_mode: false,
@@ -83,30 +83,42 @@ impl Handler {
     fn display_selectable_music(&self, ui:&mut egui::Ui) {
         let list_ref = self.dialog_handler.list_ref();
         ui.vertical(|ui| {
-            list_ref.write().iter_mut().for_each(|music| {
-                self.display_music_bar(ui, music);
+            list_ref.write().iter().for_each(|path| {
+                self.display_music_bar(ui, path);
             });
         });
     }
 
-    fn display_music_bar(&self, ui: &mut egui::Ui, music: &mut Music) {
+    fn display_music_bar(&self, ui: &mut egui::Ui, path: &PathBuf) {
+        let name = path.file_name().unwrap().to_str().unwrap();
         ui.horizontal(|ui| {
             ui.add_space(2.);
-            ui.colored_label(Color32::BROWN, &music.name);
+            ui.colored_label(Color32::BROWN, name);
             ui.add_space(10.);
+
             if ui.button("⏸").clicked() {
-                // TODO: Send message to player thread to play
+                self.sender.send(Event::Pause).unwrap();
             }
             if ui.button("▶").clicked() {
-                log::info!("sending music: {}", music.name);
-                self.send_audio(music);
+                self.sender.send(Event::Next(path.clone())).unwrap();
             }
+            if ui.button("+").clicked() {
+                let mut write_task = self.play_list.write();
+                write_task.push(path.clone());
+                self.sender.send(Event::Append(path.clone())).unwrap();
+            }
+
+            if ui.button("🔁").clicked() {
+
+            }
+            if ui.button("🔀").clicked() {
+
+            }
+
         });
     }
 }
 
 impl Handler {
-    pub fn send_audio(&self, music: &Music) {
-        self.sender.send(Event::Next(music.path.clone())).unwrap();
-    }
+
 }

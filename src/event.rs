@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 pub enum Event {
-    Quit,
+    Append(PathBuf),
     Play,
     Pause,
     Stop,

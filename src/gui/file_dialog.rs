@@ -1,11 +1,9 @@
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use egui::mutex::RwLock;
 
-use crate::Music;
-
 pub struct DialogHandler {
-    file_list: Arc<RwLock<Vec<Music>>>,
+    file_list: Arc<RwLock<Vec<PathBuf>>>,
     directory: Arc<RwLock<Option<String>>>,
     support_formats: Vec<String>,
     /// update list for every 10 ticks
@@ -27,7 +25,7 @@ impl DialogHandler {
         }
     }
 
-    pub fn list_ref(&self) -> Arc<RwLock<Vec<Music>>> {
+    pub fn list_ref(&self) -> Arc<RwLock<Vec<PathBuf>>> {
         self.file_list.clone()
     }
 
@@ -45,7 +43,7 @@ impl DialogHandler {
             for entry in glob::glob(
                 &format!("{}/*.{}", dir_ref.read().as_ref().unwrap(), format)).unwrap() {
                 let entry_path = entry.unwrap();
-                file_list_task.push(Music::new(entry_path));
+                file_list_task.push(entry_path);
             }
         });
     }

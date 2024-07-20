@@ -1,5 +1,7 @@
 use std::{io::Cursor, path::{Path, PathBuf}};
 
+use lofty::file::{AudioFile, FileType, TaggedFileExt};
+
 use crate::{Decodable, FlacMusic, MpegMusic, NcmMusic, WavMusic};
 
 pub struct Music {
@@ -32,13 +34,14 @@ pub struct AudioInfo {
 
 impl AudioInfo {
     pub fn from_path(path: impl AsRef<Path>) -> Self {
-        let duration = mp3_duration::from_path(&path).unwrap_or_default();
-        let extension = path.as_ref().extension().unwrap();
-        let decodable: Box<dyn Decodable> = match extension.to_str().unwrap() {
-            "ncm" => Box::new(NcmMusic::from_path(path).unwrap()),
-            "mp3" => Box::new(MpegMusic::from_path(path).unwrap()),
-            "wav" => Box::new(WavMusic::from_path(path).unwrap()),
-            "flac" => Box::new(FlacMusic::from_path(path).unwrap()),
+        let file = lofty::read_from_path(&path).unwrap();
+        let properties = file.properties();
+        let duration = properties.duration();
+        let decodable: Box<dyn Decodable> = match file.file_type() {
+            FileType::Custom("ncm") => Box::new(NcmMusic::from_path(path).unwrap()),
+            FileType::Mpeg => Box::new(MpegMusic::from_path(path).unwrap()),
+            FileType::Wav => Box::new(WavMusic::from_path(path).unwrap()),
+            FileType::Flac => Box::new(FlacMusic::from_path(path).unwrap()),
             _ => panic!("Unsupported file format"),
         };
         Self {
