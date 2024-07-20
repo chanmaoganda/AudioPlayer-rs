@@ -1,6 +1,6 @@
 use std::{io::Cursor, path::{Path, PathBuf}};
 
-use crate::{Decodable, MpegMusic, NcmMusic};
+use crate::{Decodable, FlacMusic, MpegMusic, NcmMusic, WavMusic};
 
 pub struct Music {
     pub path: PathBuf,
@@ -34,12 +34,12 @@ impl AudioInfo {
     pub fn from_path(path: impl AsRef<Path>) -> Self {
         let duration = mp3_duration::from_path(&path).unwrap_or_default();
         let extension = path.as_ref().extension().unwrap();
-        let decodable: Box<dyn Decodable> = if extension == "mp3" {
-            Box::new(MpegMusic::from_path(path).unwrap())
-        } else if extension == "ncm" {
-            Box::new(NcmMusic::from_path(path).unwrap())
-        } else {
-            panic!("Unsupported file format: {:?}", extension);
+        let decodable: Box<dyn Decodable> = match extension.to_str().unwrap() {
+            "ncm" => Box::new(NcmMusic::from_path(path).unwrap()),
+            "mp3" => Box::new(MpegMusic::from_path(path).unwrap()),
+            "wav" => Box::new(WavMusic::from_path(path).unwrap()),
+            "flac" => Box::new(FlacMusic::from_path(path).unwrap()),
+            _ => panic!("Unsupported file format"),
         };
         Self {
             duration: duration.as_secs(),

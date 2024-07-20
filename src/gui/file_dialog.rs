@@ -7,7 +7,7 @@ use crate::Music;
 pub struct DialogHandler {
     file_list: Arc<RwLock<Vec<Music>>>,
     directory: Arc<RwLock<Option<String>>>,
-
+    support_formats: Vec<String>,
     /// update list for every 10 ticks
     cycle_tick: u8,
 }
@@ -17,6 +17,12 @@ impl DialogHandler {
         Self {
             file_list: Arc::new(RwLock::new(Vec::new())),
             directory,
+            support_formats: vec![
+                "mp3".to_string(), 
+                "ncm".to_string(),
+                "flac".to_string(),
+                "wav".to_string(),
+                ],
             cycle_tick: 0,
         }
     }
@@ -35,16 +41,13 @@ impl DialogHandler {
         }
         let mut file_list_task = self.file_list.write();
         file_list_task.clear();
-        for entry in glob::glob(
-            &format!("{}/*.{}", dir_ref.read().as_ref().unwrap(), "mp3")).unwrap() {
-            let entry_path = entry.unwrap();
-            file_list_task.push(Music::new(entry_path));
-        }
-        for entry in glob::glob(
-            &format!("{}/*.{}", dir_ref.read().as_ref().unwrap(), "ncm")).unwrap() {
-            let entry_path = entry.unwrap();
-            file_list_task.push(Music::new(entry_path));
-        }
+        self.support_formats.iter().for_each(|format| {
+            for entry in glob::glob(
+                &format!("{}/*.{}", dir_ref.read().as_ref().unwrap(), format)).unwrap() {
+                let entry_path = entry.unwrap();
+                file_list_task.push(Music::new(entry_path));
+            }
+        });
     }
 }
 
