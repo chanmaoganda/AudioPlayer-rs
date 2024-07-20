@@ -34,10 +34,16 @@ impl App for Handler {
         thread::sleep(Duration::from_millis(5));
         self.set_font_style(ctx);
         self.dialog_handler.update_list();
-        egui::CentralPanel::default().show(ctx, |ui| {
-            self.update_picked_path(ui);
-            self.display_selectable_music(ui);
-        });
+        if !self.dump_mode {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                self.update_picked_path(ui);
+                self.display_selectable_music(ui);
+            });
+        } else {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                self.display_dump_mode(ui);
+            });
+        }
     }
 }
 
@@ -120,5 +126,7 @@ impl Handler {
 }
 
 impl Handler {
-
+    fn display_dump_mode(&mut self, ui: &mut egui::Ui) {
+        ui.checkbox(&mut self.dump_mode, "dump mode");
+    }
 }
