@@ -11,6 +11,7 @@ pub struct MusicPlayer {
     _stream: OutputStream,
     event_receiver: Receiver<Event>,
     pos_sender: SyncSender<Duration>,
+    is_playing: bool,
 }
 
 impl MusicPlayer {
@@ -22,19 +23,22 @@ impl MusicPlayer {
             _stream,
             event_receiver,
             pos_sender,
+            is_playing: false,
         }
     }
 
-    pub fn run(self) {
+    pub fn run(mut self) {
         loop {
-            thread::sleep(Duration::from_millis(15));
-            if !self.sink.empty() {
+            thread::sleep(Duration::from_millis(5));
+            if self.is_playing {
                 self.pos_sender.send(self.sink.get_pos()).unwrap();
             }
             match self.event_receiver.try_recv() {
                 Ok(event) => {
                     match event {
                         Event::Append(path) => self.append(path),
+                        Event::Skip5s => self.skip_5s(),
+                        Event::Rewind5s => self.rewind_5s(),
                         Event::Play => self.play(),
                         Event::Pause => self.pause(),
                         Event::Stop => self.stop(),
@@ -54,19 +58,32 @@ impl MusicPlayer {
         self.sink.pause();
     }
 
-    fn stop(&self) {
+    fn stop(&mut self) {
+        self.is_playing = false;
         self.sink.stop();
     }
 
-    fn next(&self, path: PathBuf) {
+    fn next(&mut self, path: PathBuf) {
+        self.is_playing = true;
         let audio = Audio::new(&path);
         self.sink.stop();
         self.sink.append(audio.into_decoder());
         self.sink.play();
     }
 
-    fn append(&self, path: PathBuf) {
+    fn append(&mut self, path: PathBuf) {
+        self.is_playing = true;
         let audio = Audio::new(&path);
         self.sink.append(audio.into_decoder());
+    }
+
+    fn skip_5s(&self) {
+        let pos = self.sink.get_pos() + Duration::from_secs(5);
+        self.sink.try_seek(pos).unwrap();
+    }
+
+    fn rewind_5s(&self) {
+        let pos = self.sink.get_pos() - Duration::from_secs(5);
+        self.sink.try_seek(pos).unwrap();
     }
 }

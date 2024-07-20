@@ -9,9 +9,9 @@ use super::file_dialog::DialogHandler;
 
 pub struct PlayerConfig {
     pub dump_mode: bool,
-    pub progress: u64,
     pub current_music: Option<PathBuf>,
-    pub current_pos: Duration,
+    pub current_pos: u64,
+    pub is_playing: bool,
 }
 
 pub struct Handler {
@@ -34,10 +34,10 @@ impl Handler {
             event_sender,
             pos_receiver,
             config: PlayerConfig {
-                progress: 0,
                 current_music: None,
-                current_pos: Duration::from_secs(0),
+                current_pos: 0,
                 dump_mode: false,
+                is_playing: false,
             }
         }
     }
@@ -48,7 +48,7 @@ impl App for Handler {
         thread::sleep(Duration::from_millis(5));
         match self.pos_receiver.try_recv() {
             Ok(pos) => {
-                self.config.current_pos = pos;
+                self.config.current_pos = pos.as_secs();
             }
             Err(_) => {}
         }
@@ -110,7 +110,7 @@ impl Handler {
         }
     }
 
-    fn display_selectable_music(&self, ui:&mut egui::Ui) {
+    fn display_selectable_music(&mut self, ui:&mut egui::Ui) {
         let list_ref = self.dialog_handler.list_ref();
         ui.vertical(|ui| {
             list_ref.read().iter().for_each(|path| {
@@ -119,17 +119,16 @@ impl Handler {
         });
     }
 
-    fn display_music_bar(&self, ui: &mut egui::Ui, path: &PathBuf) {
+    fn display_music_bar(&mut self, ui: &mut egui::Ui, path: &PathBuf) {
         let name = path.file_name().unwrap().to_str().unwrap();
         ui.horizontal(|ui| {
             ui.add_space(2.);
             ui.colored_label(Color32::BROWN, name);
             ui.add_space(10.);
 
-            if ui.button("⏸").clicked() {
-                self.event_sender.send(Event::Pause).unwrap();
-            }
             if ui.button("▶").clicked() {
+                self.config.is_playing = true;
+                self.config.current_music = Some(path.clone());
                 self.event_sender.send(Event::Next(path.clone())).unwrap();
             }
             if ui.button("+").clicked() {
@@ -137,30 +136,68 @@ impl Handler {
                 write_task.push(path.clone());
                 self.event_sender.send(Event::Append(path.clone())).unwrap();
             }
+            // TODO: care about update current_music!
+            // if ui.button("🔁").clicked() {
 
-            if ui.button("🔁").clicked() {
+            // }
+            // if ui.button("🔀").clicked() {
 
-            }
-            if ui.button("🔀").clicked() {
-
-            }
+            // }
 
         });
     }
 
     fn display_progress_bar(&mut self, ui: &mut egui::Ui, music: Option<PathBuf>) {
+
         if music.is_none() {
-            ui.add(egui::Slider::new(&mut self.config.progress, 0..=100));
+            ui.add(egui::Slider::new(&mut self.config.current_pos, 0..=100));
             return;
         }
         
         let duration = parser::get_duration(music.as_ref().unwrap()).unwrap();
-        ui.add(egui::Slider::new(&mut self.config.progress, 0..=duration.as_secs()));
+        let bar = egui::ProgressBar::new(self.config.current_pos as f32 / duration.as_secs_f32())
+            .desired_width(300.);
+        ui.add(bar);
+        ui.label(format!("{} / {}", display_time(&self.config.current_pos), display_time(&duration.as_secs())));   
+        ui.horizontal(|ui| {
+            if ui.button("⏮").on_hover_text("Rewind 5 seconds").clicked() {
+                self.event_sender.send(Event::Rewind5s).unwrap();
+            }
+            if ui.button("⏯").clicked() {
+                self.display_pause_resume();
+            }
+            if ui.button("⏭").on_hover_text("Skip 5 seconds").clicked() {
+                self.event_sender.send(Event::Skip5s).unwrap();
+            }
+            ui.add_space(10.);
+            if ui.button("🗑").on_hover_text("clear list").clicked() {
+                self.event_sender.send(Event::Stop).unwrap();
+                self.config.current_pos = 0;
+            }
+        });
     }
+
+
+}
+
+fn display_time(time: &u64) -> String{
+    let seconds = time % 60;
+    let minutes = time / 60;
+    format!("{}:{}", minutes, seconds)
 }
 
 impl Handler {
     fn display_dump_mode(&mut self, ui: &mut egui::Ui) {
         ui.checkbox(&mut self.config.dump_mode, "dump mode");
+    }
+
+    fn display_pause_resume(&mut self) {
+        if self.config.is_playing {
+            self.event_sender.send(Event::Pause).unwrap();
+            self.config.is_playing = false;
+        } else {
+            self.event_sender.send(Event::Play).unwrap();
+            self.config.is_playing = true;
+        }
     }
 }
