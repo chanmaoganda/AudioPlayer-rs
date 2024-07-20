@@ -30,7 +30,11 @@ impl DialogHandler {
             return;
         }
         let dir_ref = self.directory.as_ref();
+        if dir_ref.read().is_none() {
+            return;
+        }
         let mut file_list_task = self.file_list.write();
+        file_list_task.clear();
         for entry in glob::glob(
             &format!("{}/*.{}", dir_ref.read().as_ref().unwrap(), "mp3")).unwrap() {
             let entry_path = entry.unwrap();
@@ -46,6 +50,7 @@ impl DialogHandler {
 
 impl DialogHandler {
     fn check_update(&mut self) -> bool {
+        self.cycle_tick += 1;
         if self.cycle_tick == 200  {
             self.cycle_tick = 0;
             return true;
@@ -53,5 +58,4 @@ impl DialogHandler {
         if self.cycle_tick % 10 != 0 { true } 
         else { false }
     }
-
 }

@@ -4,13 +4,17 @@ use crate::{Decodable, MpegMusic, NcmMusic};
 
 pub struct Music {
     pub path: PathBuf,
+    pub name: String,
     pub audio_info: Option<AudioInfo>,
 }
 
 impl Music {
     pub fn new(path: impl AsRef<Path>) -> Self {
+        let name = path.as_ref().file_name().unwrap()
+            .to_str().unwrap().to_string();
         Self {
             path: PathBuf::from(path.as_ref()),
+            name,
             audio_info: None,
         }
     }
@@ -22,17 +26,13 @@ impl Music {
 }
 
 pub struct AudioInfo {
-    pub name: String,
     pub duration: u64,
-    pub tag: id3::Tag,
     pub decodable: Box<dyn Decodable>,
 }
 
 impl AudioInfo {
     pub fn from_path(path: impl AsRef<Path>) -> Self {
-        let tag = id3::Tag::read_from_path(&path).unwrap();
-        let name = path.as_ref().file_name().unwrap().to_str().unwrap().to_string();
-        let duration = mp3_duration::from_path(&path).unwrap();
+        let duration = mp3_duration::from_path(&path).unwrap_or_default();
         let extension = path.as_ref().extension().unwrap();
         let decodable: Box<dyn Decodable> = if extension == "mp3" {
             Box::new(MpegMusic::from_path(path).unwrap())
@@ -42,9 +42,7 @@ impl AudioInfo {
             panic!("Unsupported file format: {:?}", extension);
         };
         Self {
-            name,
             duration: duration.as_secs(),
-            tag,
             decodable,
         }
     }
@@ -53,4 +51,3 @@ impl AudioInfo {
         self.decodable.get_cursor()
     }
 }
-

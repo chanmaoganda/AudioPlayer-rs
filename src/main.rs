@@ -1,20 +1,34 @@
 mod music;
 mod play_handler;
 mod gui;
+mod event;
+
+use std::{sync::mpsc::sync_channel, thread};
 
 use gui::Handler;
-pub use music::*;
-pub use play_handler::*;
+use music::*;
+use play_handler::MusicPlayer;
 
 fn main() -> anyhow::Result<()> {
     env_logger::init();
+    let (sender, receiver) = sync_channel(1);
+    
+
+    let music = thread::spawn(move || {
+        let music_player = MusicPlayer::new(receiver);
+        music_player.run();
+    });
+    
     let native_options = eframe::NativeOptions::default();
     eframe::run_native("AudioPlayer-rs", 
         native_options, 
         Box::new(
-            |_: &eframe::CreationContext| Ok(Box::new(Handler::new()))
+            |cc: &eframe::CreationContext| Ok(Box::new(Handler::new(cc, sender)))
         )
     ).unwrap();
+
+    music.join().unwrap();
+    log::info!("Exiting");
 
     Ok(())
 }
