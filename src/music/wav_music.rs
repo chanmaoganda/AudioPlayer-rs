@@ -3,6 +3,7 @@ use std::{io::Cursor, path::Path};
 use crate::Decodable;
 
 
+#[derive(Clone)]
 pub struct WavMusic {
     audio_data: Vec<u8>,
 }

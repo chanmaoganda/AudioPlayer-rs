@@ -13,6 +13,6 @@ pub use ncm_music::NcmMusic;
 pub use music::Music;
 
 /// This trait guarantees the implementation struct is decoded when the instance is created.
-pub trait Decodable {
+pub trait Decodable: dyn_clone::DynClone {
     fn get_cursor(&self) -> Cursor<Vec<u8>>;
 }

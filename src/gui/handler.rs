@@ -2,16 +2,19 @@ use std::{path::PathBuf, sync::{mpsc::SyncSender, Arc}, thread::{self}, time::Du
 
 use eframe::App;
 use egui::{mutex::RwLock, Color32, FontDefinitions};
+use lofty::file::AudioFile;
 
-use crate::event::Event;
+use crate::{event::Event, Music};
 
 use super::file_dialog::DialogHandler;
 
 pub struct Handler {
-    pub play_list: Arc<RwLock<Vec<PathBuf>>>,
+    pub play_list: Arc<RwLock<Vec<Music>>>,
     pub picked_path: Arc<RwLock<Option<String>>>,
     pub dialog_handler: DialogHandler,
     pub dump_mode: bool,
+    pub progress: u64,
+    pub current_music: Option<PathBuf>,
     pub sender: SyncSender<Event>,
 }
 
@@ -23,6 +26,8 @@ impl Handler {
             play_list: Arc::new(RwLock::new(Vec::new())),
             picked_path: picked_path.clone(),
             dialog_handler: DialogHandler::new(picked_path),
+            progress: 0,
+            current_music: None,
             dump_mode: false,
             sender,
         }
@@ -38,6 +43,10 @@ impl App for Handler {
             egui::CentralPanel::default().show(ctx, |ui| {
                 self.update_picked_path(ui);
                 self.display_selectable_music(ui);
+            });
+            egui::TopBottomPanel::bottom("bar").show(ctx, |ui| {
+                let music = self.current_music.clone();
+                self.display_progress_bar(ui, music);
             });
         } else {
             egui::CentralPanel::default().show(ctx, |ui| {
@@ -89,7 +98,7 @@ impl Handler {
     fn display_selectable_music(&self, ui:&mut egui::Ui) {
         let list_ref = self.dialog_handler.list_ref();
         ui.vertical(|ui| {
-            list_ref.write().iter().for_each(|path| {
+            list_ref.read().iter().for_each(|path| {
                 self.display_music_bar(ui, path);
             });
         });
@@ -110,7 +119,7 @@ impl Handler {
             }
             if ui.button("+").clicked() {
                 let mut write_task = self.play_list.write();
-                write_task.push(path.clone());
+                write_task.push(Music::new(path));
                 self.sender.send(Event::Append(path.clone())).unwrap();
             }
 
@@ -122,6 +131,16 @@ impl Handler {
             }
 
         });
+    }
+
+    fn display_progress_bar(&mut self, ui: &mut egui::Ui, path: Option<PathBuf>) {
+        if path.is_none() {
+            ui.add(egui::Slider::new(&mut self.progress, 0..=100));
+            return;
+        }
+        let file = lofty::read_from_path(path.unwrap()).unwrap();
+        let duration = file.properties().duration();
+        ui.add(egui::Slider::new(&mut self.progress, 0..=duration.as_secs()));
     }
 }
 

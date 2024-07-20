@@ -2,7 +2,7 @@ use std::{io::Cursor, path::Path};
 
 use crate::Decodable;
 
-
+#[derive(Clone)]
 pub struct MpegMusic {
     audio_data: Vec<u8>,
 }
